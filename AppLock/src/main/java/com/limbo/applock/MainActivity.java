@@ -6,6 +6,7 @@ import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
+import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -16,7 +17,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
+
+import java.util.List;
 
 public class MainActivity extends Activity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
@@ -58,13 +64,13 @@ public class MainActivity extends Activity
     public void onSectionAttached(int number) {
         switch (number) {
             case 1:
-                mTitle = getString(R.string.title_section1);
+                mTitle = getString(R.string.title_apps_all);
                 break;
             case 2:
-                mTitle = getString(R.string.title_section2);
+                mTitle = getString(R.string.title_apps_locked);
                 break;
             case 3:
-                mTitle = getString(R.string.title_section3);
+                mTitle = getString(R.string.title_apps_unlocked);
                 break;
         }
     }
@@ -111,6 +117,8 @@ public class MainActivity extends Activity
          * fragment.
          */
         private static final String ARG_SECTION_NUMBER = "section_number";
+        private List<AppInfo> appInfos;
+        private ListView appListView;
 
         /**
          * Returns a new instance of this fragment for the given section
@@ -131,8 +139,12 @@ public class MainActivity extends Activity
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-            textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
+            if (rootView != null) {
+                appListView = (ListView) rootView.findViewById(R.id.applist);
+                AppInfoManager appInfoManager = new AppInfoManager(this.getActivity());
+                appInfos = appInfoManager.getAppList();
+                appListView.setAdapter(new ApplistAdapter());
+            }
             return rootView;
         }
 
@@ -141,6 +153,49 @@ public class MainActivity extends Activity
             super.onAttach(activity);
             ((MainActivity) activity).onSectionAttached(
                     getArguments().getInt(ARG_SECTION_NUMBER));
+        }
+
+
+        private class ApplistAdapter extends BaseAdapter {
+            @Override
+            public int getCount() {
+                return appInfos.size();
+            }
+
+            @Override
+            public Object getItem(int position) {
+                return appInfos.get(position);
+            }
+
+            @Override
+            public long getItemId(int position) {
+                return position;
+            }
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                AppInfo appInfo = appInfos.get(position);
+                if (convertView == null) {
+                    View view = View.inflate(PlaceholderFragment.this.getActivity(), R.layout.listitem_appinfo, null);
+                    AppInfoView appInfoView = new AppInfoView();
+                    appInfoView.appIcon = (ImageView) view.findViewById(R.id.app_icon);
+                    appInfoView.appName = (TextView) view.findViewById(R.id.app_name);
+                    appInfoView.appIcon.setImageDrawable(appInfo.getIcon());
+                    appInfoView.appName.setText(appInfo.getAppName());
+                    view.setTag(appInfoView);
+                    return view;
+                } else {
+                    AppInfoView view = (AppInfoView) convertView.getTag();
+                    view.appIcon.setImageDrawable(appInfo.getIcon());
+                    view.appName.setText(appInfo.getAppName());
+                    return convertView;
+                }
+            }
+        }
+
+        private class AppInfoView {
+            ImageView appIcon;
+            TextView appName;
         }
     }
 
